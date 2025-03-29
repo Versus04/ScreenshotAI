@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.screenshotai.screens.inputing
 import com.example.screenshotai.ui.theme.ScreenshotaiTheme
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -35,23 +36,3 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@Composable
-fun inputing()
-{
-    Column(Modifier.fillMaxSize() , verticalArrangement = Arrangement.Center ,
-        horizontalAlignment = Alignment.CenterHorizontally ){
-            Text("Home Screen")
-        IconButton(
-            onClick = {},
-            modifier = Modifier
-        ) {
-            Icon(imageVector = Icons.Default.Home , contentDescription = null)
-        }
-    }
-}
-
-fun recognize()
-{
-    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-
-}

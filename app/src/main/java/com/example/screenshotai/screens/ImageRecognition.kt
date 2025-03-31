@@ -1,129 +1,103 @@
-package com.example.screenshotai.screens
-
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.ImageDecoder
 import android.net.Uri
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
+import com.google.mlkit.nl.entityextraction.EntityExtraction
+import com.google.mlkit.nl.entityextraction.EntityExtractionParams
+import com.google.mlkit.nl.entityextraction.EntityExtractorOptions
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import java.io.IOException
+import kotlin.math.sin
 
-@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun inputing()
 {
-    Column(Modifier.fillMaxSize() , verticalArrangement = Arrangement.Center ,
-        horizontalAlignment = Alignment.CenterHorizontally ){
-        Text("Home Screen")
-
-        Takeimage()
-
-    }
-
-}
-
-@RequiresApi(Build.VERSION_CODES.P)
-@Composable
-fun Takeimage()
-{
     val context = LocalContext.current
-    var selecteduri by remember {
-        mutableStateOf<Uri?>(null)
-    }
-    var selectedurilist by remember {
-        mutableStateOf<List<Uri?>>(emptyList())
-    }
-    val singleimagepicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
-        onResult ={ uri->
-            selecteduri=uri
-            if(uri==null)
-            {
-                Toast.makeText(context,"NO image",Toast.LENGTH_SHORT)
-            }
-        }
-    )
-    val multiimagepicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(),
-        onResult = {multiuri->
-            selectedurilist=multiuri
-        }
-    )
-    IconButton(
-        onClick = {
-            singleimagepicker.launch("image/*")
-        }
-        ,
-        modifier = Modifier
-    ) {
-        Icon(imageVector = Icons.Default.Home , contentDescription = null)
+    var selecteduri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val singleimagepicker = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent(), onResult = {uri->
+        selecteduri=uri
+        if(uri==null)
+        {
+            Toast.makeText(context, "No image selected", Toast.LENGTH_SHORT).show()
 
-    }
-    selecteduri.let { uri->
-        recognizeTextFromImage(
-            context, uri,
-
+        }
+    })
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(all = 16.dp) ,
+       )
+    {
+        Box(modifier = Modifier.fillMaxSize()){   Example(onClick = { singleimagepicker.launch("image/*") } ,
+            Modifier
+                .align(Alignment.BottomEnd)
+                .padding(32.dp)
         )
+            selecteduri?.let {
+                uri->
+                LaunchedEffect(uri){ recognition(context, uri) }
+            AsyncImage(model = (uri),null)
+        }
+        }
+
+
     }
 }
-@RequiresApi(Build.VERSION_CODES.P)
-fun uriToBitmap(context: Context, uri: Uri?): Bitmap? {
-    if (uri == null) return null  // Handle null URI early
-
-    return try {
-        val source = ImageDecoder.createSource(context.contentResolver, uri)
-        ImageDecoder.decodeBitmap(source)
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
 @Composable
-@RequiresApi(Build.VERSION_CODES.P)
-fun recognizeTextFromImage(context: Context, uri: Uri?) {
-    if (uri == null) {
-        Log.d("TextRecognition", "URI is null, cannot process image")
+fun Example(onClick: () -> Unit,modifier: Modifier) {
+    LargeFloatingActionButton(
+        onClick = { onClick() },
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        modifier = modifier,
+        //interactionSource = TODO(),
+    ) {
+        Icon(Icons.Filled.Add, "Floating action button.")
+    }
+}
+fun recognition(context: Context,uri: Uri)
+{
+    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+
+    val image: InputImage
+    try {
+        image = InputImage.fromFilePath(context, uri)
+
+    } catch (e: IOException) {
+        e.printStackTrace()
         return
     }
+    val result = recognizer.process(image)
+        .addOnSuccessListener { visionText ->
+            Log.d("ttyl",visionText.text)
+        }
+        .addOnFailureListener { e ->
+            Log.d("ttyl",e.message.toString())
+        }
 
-    val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-    val bitmap = uriToBitmap(context, uri)
-
-    if (bitmap != null) {
-        val image = InputImage.fromBitmap(bitmap, 0)
-
-        recognizer.process(image)
-            .addOnSuccessListener { visionText ->
-                Log.d("TextRecognition", "Extracted Text: ${visionText.text}")
-            }
-            .addOnFailureListener { e ->
-                e.printStackTrace()
-                Log.d("TextRecognition", "Text recognition failed: ${e.message}")
-            }
-    } else {
-        Log.e("TextRecognition", "Bitmap is null, failed to decode image")
-    }
 }

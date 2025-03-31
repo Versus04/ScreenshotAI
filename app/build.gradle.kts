@@ -40,9 +40,12 @@ android {
 }
 
 dependencies {
+    implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("com.google.mlkit:language-id:17.0.6")
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
     implementation("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.mlkit:entity-extraction:16.0.0-beta5")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
